@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LanCache Host Checker</title>
+    <script src="sites.js"></script>
+    <style>
+      :root {
+        --primary-color: #3B82F6;
+        --text-color: #ffffff;
+        --background-color: #111827;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ff0000;
+        --white: #ffffff;
+        --light-gray: #f8fafc;
+        --gray: #64748b;
+        --dark-gray: #1F2937;
+        --border: #e2e8f0;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+        --status-dot-size: 1rem;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+      }
+
+      /* Header Section */
+      .header {
+        background: var(--background-color);
+        color: var(--text-color);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: var(--shadow-hover);
+        border: 2px solid var(--primary-color);
+      }
+
+      .header img {
+        max-height: 80px;
+        filter: brightness(0) invert(1);
+      }
+
+      .header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .header .subtitle {
+        font-size: 1.25rem;
+        opacity: 0.95;
+      }
+
+      .dns-info {
+        background: rgba(31, 41, 55, 0.6);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(31, 41, 55, 0.9);
+      }
+
+      .dns-value {
+          font-size: 1.1rem;
+          font-weight: 700;
+          background: rgba(59, 130, 246, 0.2);
+          padding: 0.5rem 1rem;
+          border-radius: 8px;
+          display: inline-block;
+      }
+
+      .dns-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 1.5rem;
+          margin-top: 1rem;
+      }
+
+      .dns-item h3 {
+          font-size: 1.1rem;
+          margin-bottom: 0.5rem;
+          opacity: 0.9;
+      }
+
+      .button-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .info-button {
+        background: var(--primary-color);
+        color: var(--text-color);
+        padding: 1rem 1.5rem;
+        border: 2px solid var(--primary-color);
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: inline-block;
+        text-align: center;
+      }
+
+      .info-button:hover {
+        background: transparent;
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(233, 29, 18, 0.3);
+        color: var(--text-color);
+        text-decoration: none;
+      }
+
+      /* Test Section */
+      .test-section {
+        background: var(--background-color);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+        border: 2px solid var(--primary-color);
+      }
+
+      .test-section h2 {
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .input-group input {
+        flex: 1;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--primary-color);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background: var(--background-color);
+        color: var(--text-color);
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(233, 29, 18, 0.2);
+      }
+
+      .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background: var(--primary-color);
+        color: var(--text-color);
+      }
+
+      .btn-primary:hover {
+        background: #c41611;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      /* Alert Section */
+      .alert {
+        padding: 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        position: relative;
+        border-left: 4px solid;
+      }
+
+      .alert-success {
+        background: #f0fdf4;
+        border-left-color: var(--success-color);
+        color: #166534;
+      }
+
+      .alert-warning {
+        background: #fffbeb;
+        border-left-color: var(--warning-color);
+        color: #92400e;
+      }
+
+      .alert-danger {
+        background: #fef2f2;
+        border-left-color: var(--danger-color);
+        color: #991b1b;
+      }
+
+      .alert .close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        opacity: 0.6;
+        color: inherit;
+      }
+
+      .alert .close:hover {
+        opacity: 1;
+      }
+
+      #cache-info {
+        position: sticky;
+        top: 1em;
+        z-index: 5;
+      }
+
+      /* CDN Cards Grid */
+      .services-header {
+        margin: 2rem 0 1.5rem 0;
+        text-align: center;
+      }
+
+      .services-header h2 {
+        color: var(--text-color);
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .services-header p {
+        color: var(--text-color);
+        font-size: 1.1rem;
+        opacity: 0.8;
+      }
+
+      .cdn-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.3rem;
+      }
+
+      .cdn-card {
+        background: var(--dark-gray);
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: var(--shadow);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .cdn-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-hover);
+      }
+
+      .cdn-card.status-success {
+        border-top: 6px solid var(--success-color);
+      }
+      .cdn-card.status-warning {
+        border-top: 6px solid var(--warning-color);
+      }
+      .cdn-card.status-danger {
+        border-top: 6px solid var(--danger-color);
+      }
+      .cdn-card.status-loading {
+        border-top: 6px solid rgba(100, 100, 100, 0.5);
+      }
+
+      .cdn-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-shrink: 0;
+      }
+
+      .cdn-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        margin-right: 1rem;
+        background: rgba(31, 41, 55, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--text-color);
+        flex-shrink: 0;
+        border: 1px solid var(--primary-color);
+      }
+
+      .cdn-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-color);
+        font-family: monospace;
+        line-height: 1.2;
+      }
+
+      .cdn-description {
+        color: var(--text-color);
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+        flex-grow: 1;
+        line-height: 1.5;
+        opacity: 0.8;
+      }
+
+      .cdn-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid var(--primary-color);
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .status-dot {
+        width: var(--status-dot-size);
+        height: var(--status-dot-size);
+        border-radius: 50%;
+        margin-right: 0.75rem;
+        position: relative;
+      }
+
+      .status-dot.success {
+        background: var(--success-color);
+      }
+
+      .status-dot.warning {
+        background: var(--warning-color);
+      }
+
+      .status-dot.danger {
+        background: var(--danger-color);
+      }
+
+      .status-dot.loading {
+        background: var(--gray);
+        animation: pulse 2s infinite;
+      }
+
+      .status-dot.success::after {
+        content: "✓";
+        display: block;
+        height: 100%;
+        color: white;
+        font-size: calc(var(--status-dot-size) / 2);
+        font-weight: bold;
+        text-align: center;
+        line-height: var(--status-dot-size);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      .stats-text {
+        font-weight: 600;
+        color: var(--text-color);
+      }
+
+      #urltext {
+        margin-bottom: 1rem;
+      }
+
+      #urltext a {
+        color: var(--primary-color);
+        text-decoration: underline;
+      }
+
+      #urltext a:hover {
+        color: #c41611;
+      }
+
+      .working-count {
+        color: var(--text-color);
+      }
+
+      .working-count.success {
+        color: var(--success-color);
+      }
+
+      .working-count.warning {
+        color: var(--warning-color);
+      }
+
+      .working-count.danger {
+        color: var(--danger-color);
+      }
+
+      @media (min-width: 1600px) {
+        .container {
+          max-width: 1800px;
+          padding-left: 0.25rem;
+          padding-right: 0.25rem;
+        }
+
+        .cdn-grid {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .header {
+          padding: 2rem 1.5rem;
+        }
+
+        .header h1 {
+          font-size: 2.5rem;
+        }
+
+        .dns-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .button-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .input-group {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .cdn-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .cdn-card {
+          min-height: 160px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .cdn-card {
+          padding: 1.25rem;
+          min-height: 140px;
+        }
+
+        .cdn-logo {
+          width: 32px;
+          height: 32px;
+        }
+
+        .cdn-title {
+          font-size: 1.1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header Section -->
+      <div class="header">
+        <img
+          src="logo.png"
+          alt="LanCache.Net" />
+        <p class="subtitle">
+          We are aware of <strong id="domaincount">0</strong> domains spanning
+          <strong id="providercount">0</strong> providers.
+        </p>
+        <p id="urltext"></p>
+
+        <div class="dns-info">
+            <p style="margin-bottom: 1rem;">During LanCache Test if you find the listed Gaming Stream sites RED then your Cache Services are NOT working. Please use our following DNS to resolve this issue instantly!</p>
+            
+            <div class="dns-grid">
+                <div class="dns-item">
+                    <h3>DNS IPv4:</h3>
+                    <div class="dns-value">172.16.172.10</div>
+                    <div class="dns-value">172.16.172.14</div>
+                </div>
+                <div class="dns-item">
+                    <h3>DNS IPv6:</h3>
+                    <div class="dns-value">Remove all IPV6 DNS from ROUTER and PC</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Test Section -->
+      <div class="test-section">
+        <h2>🔍 Test Custom Domain</h2>
+        <div class="input-group">
+          <input
+            type="text"
+            id="inputTest"
+            placeholder="Enter domain to test (Wildcards valid - e.g., *.example.com)" />
+          <button id="inputTestButton" class="btn btn-primary">
+            Test Domain
+          </button>
+        </div>
+      </div>
+
+      <!-- Alert Section -->
+      <div id="cache-info" class="alert alert-warning" style="display: none">
+        <button type="button" class="close" onclick="hideAlert()">
+          &times;
+        </button>
+        <div id="cache-info-display-title"></div>
+        <div id="cache-info-display"></div>
+      </div>
+
+      <!-- Services Header -->
+      <div class="services-header">
+        <h2>🎮 Gaming & CDN Services</h2>
+        <p>
+          Live status of supported gaming platforms and content delivery
+          networks
+        </p>
+      </div>
+
+      <!-- CDN Cards Grid -->
+      <div id="cdns" class="cdn-grid"></div>
+
+      <!-- Hidden Template -->
+      <div id="cdntemplate" style="display: none">
+        <div class="cdn-card status-loading">
+          <div class="cdn-header">
+            <div class="cdn-logo" id="logo">
+              <span id="logo-fallback">?</span>
+              <img
+                id="logo-img"
+                style="display: none"
+                onerror="this.style.display='none'; this.parentNode.querySelector('#logo-fallback').style.display='inline';" />
+            </div>
+            <div class="cdn-title" id="title">Loading...</div>
+          </div>
+          <div class="cdn-description" id="tagline">Checking domains...</div>
+          <div class="cdn-footer">
+            <div class="status-indicator">
+              <div class="status-dot loading"></div>
+              <span class="stats-text">
+                <span class="working-count"
+                  id="workingcdndomaincount">0</span>/<span
+                  id="totalcdndomaincount">0</span> domains
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const wildcardPrefix = "lancachetest.";
+      function hideAlert() {
+        document.getElementById("cache-info").style.display = "none";
+      }
+      function displayAlert(title, content, type = "warning") {
+        const alert = document.getElementById("cache-info");
+        alert.classList.remove(
+          "alert-warning",
+          "alert-danger",
+          "alert-success"
+        );
+        alert.classList.add(`alert-${type}`);
+        document.getElementById(
+          "cache-info-display-title"
+        ).innerHTML = `<strong>${title}</strong><br>`;
+        document.getElementById("cache-info-display").innerHTML = content;
+        alert.style.display = "";
+      }
+      function checkDomain(cdn, domainname) {
+        domainname = domainname.replace(/^\*\./, wildcardPrefix);
+        return new Promise((resolve) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("GET", `//${domainname}/lancache-heartbeat`);
+          xhr.onload = () => {
+            const ret = {
+              host: domainname.includes(wildcardPrefix)
+                ? domainname.replace(wildcardPrefix, "*.") +
+                  ` (via ${domainname})`
+                : domainname,
+              status: xhr.status === 204 ? 1 : 0,
+              cdn,
+              respondingHost:
+                xhr.status === 204
+                  ? xhr.getResponseHeader("X-LanCache-Processed-By")
+                  : false,
+            };
+            resolve(ret);
+          };
+          xhr.onerror = () =>
+            resolve({
+              host: domainname,
+              status: 0,
+              cdn,
+              respondingHost: false,
+            });
+          xhr.send();
+        });
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        hideAlert();
+        const input = document.getElementById("inputTest");
+        const btn = document.getElementById("inputTestButton");
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") btn.click();
+        });
+        btn.addEventListener("click", () => {
+          const url = input.value.trim();
+          checkDomain(false, url).then((response) => {
+            if (response.status === 1) {
+              displayAlert(
+                "✅ Test Succeeded",
+                `${url} resolves to a LanCache instance named ${response.respondingHost}`,
+                "success"
+              );
+            } else {
+              displayAlert(
+                "❌ Test Failed",
+                `${url} did not resolve to a LanCache instance`,
+                "danger"
+              );
+            }
+          });
+        });
+        const cdnContainer = document.getElementById("cdns");
+        const template = document.getElementById("cdntemplate");
+        template.style.display = "none";
+        let domaincount = 0,
+          providercount = 0;
+        const distinctCaches = [];
+        for (const cdn in cachedomains) {
+          providercount++;
+          const domains = cachedomains[cdn].domains;
+          domaincount += domains.length;
+          cachedomains[cdn].brokenDomains = [];
+          const el = template.cloneNode(true);
+          el.id = `cdn-${cdn}`;
+          el.style.display = "";
+          cdnContainer.appendChild(el);
+          el.querySelector("#title").textContent = cdn;
+          el.querySelector("#tagline").textContent =
+            cachedomains[cdn].description;
+          el.querySelector("#totalcdndomaincount").textContent = domains.length;
+          el.querySelector("#logo-fallback").textContent = cdn
+            .charAt(0)
+            .toUpperCase();
+          el.addEventListener("click", () => {
+            const broken = cachedomains[cdn].brokenDomains;
+            if (broken.length) {
+              displayAlert(
+                "The following domains did not resolve to a LanCache instance:",
+                broken.join("<br>")
+              );
+            } else {
+              hideAlert();
+            }
+          });
+          const checks = domains.map((d) => checkDomain(cdn, d));
+          Promise.all(checks).then((responses) => {
+            let success = 0,
+              fail = 0;
+            responses.forEach((r) => {
+              if (r.status === 1) {
+                success++;
+                distinctCaches.includes(r.respondingHost) ||
+                  distinctCaches.push(r.respondingHost);
+              } else {
+                fail++;
+                cachedomains[r.cdn].brokenDomains.push(r.host);
+              }
+            });
+            const state =
+              success === 0
+                ? ["status-danger", "danger"]
+                : fail > 0
+                ? ["status-warning", "warning"]
+                : ["status-success", "success"];
+            const [cardClass, dotClass] = state;
+            el.querySelector(".cdn-card").className = `cdn-card ${cardClass}`;
+            const dot = el.querySelector(".status-dot");
+            dot.className = `status-dot ${dotClass}`;
+            const countEl = el.querySelector("#workingcdndomaincount");
+            countEl.className = `working-count ${dotClass}`;
+            countEl.textContent = success;
+          });
+        }
+        document.getElementById("domaincount").textContent = domaincount;
+        document.getElementById("providercount").textContent = providercount;
+        document.getElementById("urltext").innerHTML = urltext
+      });
+    </script>
+  </body>
+</html>
